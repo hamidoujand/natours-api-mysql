@@ -26,6 +26,81 @@ Tour.init(
         max: { args: 5, msg: "ratingsAverage can not be bellow 5" },
       },
     },
+    ratingsQuantity: {
+      type: DataTypes.FLOAT,
+      defaultValue: 0,
+    },
+    price: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      validate: {
+        notNull: { args: true, msg: "price is required field" },
+      },
+    },
+    duration: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      validate: {
+        notNull: { args: false, msg: "duration is required" },
+      },
+    },
+    priceDiscount: {
+      type: DataTypes.FLOAT,
+      validate: {
+        isItBelowThePrice(value) {
+          if (value > this.price) {
+            throw new Error(
+              "Price discount can not be greater than price itself"
+            );
+          }
+        },
+      },
+    },
+    summary: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: { args: true, msg: "the summary field is required" },
+        notNull: { args: true, msg: "summary is required field" },
+      },
+    },
+    description: { type: DataTypes.STRING },
+    imageCover: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: { args: true, msg: "image cover can not be empty" },
+        notNull: { args: true, msg: "image cover is required field" },
+      },
+    },
+    maxGroupSize: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      validate: {
+        notNull: {
+          args: true,
+          msg: "maxGroupSize is a required field",
+        },
+      },
+    },
+    difficulty: {
+      type: DataTypes.STRING,
+      validate: {
+        isIn: {
+          args: [["difficult", "easy", "medium"]],
+          msg:
+            "value of difficulty can only be 'difficult' , 'easy' , 'medium'",
+        },
+      },
+    },
+    secretTour: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+
+    startLocation: {
+      type: DataTypes.GEOGRAPHY("POINT"),
+    },
   },
   { sequelize, modelName: "tour" }
 );
