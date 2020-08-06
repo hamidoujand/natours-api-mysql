@@ -7,5 +7,5 @@ let sequelize = new Sequelize({
   database: process.env.DATABASE_NAME,
   host: process.env.DB_HOST,
 });
-sequelize.authenticate().then(() => console.log("DB is in the House"));
+
 module.exports = sequelize;

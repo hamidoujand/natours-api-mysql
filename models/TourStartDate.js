@@ -1,9 +1,9 @@
-let { Model, DataTypes } = require("sequelize");
+let { DataTypes, Model } = require("sequelize");
 let sequelize = require("../db/connection");
 
-class StartDates extends Model {}
+class StartDate extends Model {}
 
-StartDates.init(
+StartDate.init(
   {
     startDate: {
       type: DataTypes.DATE,
@@ -12,4 +12,4 @@ StartDates.init(
   { sequelize, modelName: "startDate" }
 );
 
-module.exports = StartDates;
+module.exports = StartDate;
