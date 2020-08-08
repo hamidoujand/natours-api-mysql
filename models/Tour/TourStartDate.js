@@ -1,5 +1,5 @@
 let { DataTypes, Model } = require("sequelize");
-let sequelize = require("../db/connection");
+let sequelize = require("../../db/connection");
 
 class StartDate extends Model {}
 

@@ -7,8 +7,10 @@ let sequelize = require("./db/connection");
 
 let tourRouter = require("./routes/tourRoutes");
 //models
-let Tour = require("./models/Tour");
-let TourStartDates = require("./models/TourStartDate");
+let Tour = require("./models/Tour/Tour");
+let TourStartDates = require("./models/Tour/TourStartDate");
+let Location = require("./models/Tour/Location");
+let Image = require("./models/Tour/Image");
 
 //Body-parser
 app.use(express.json());
@@ -23,6 +25,8 @@ app.use((err, req, res, next) => {
 
 //associations
 Tour.StartDates = Tour.hasMany(TourStartDates, { onDelete: "CASCADE" });
+Tour.Locations = Tour.hasMany(Location, { onDelete: "CASCADE" });
+Tour.Images = Tour.hasMany(Image, { onDelete: "CASCADE" });
 
 //sync all tables
 sequelize.sync({ force: false });
