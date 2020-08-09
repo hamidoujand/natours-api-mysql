@@ -1,5 +1,17 @@
 let router = require("express").Router();
 let tourController = require("../controllers/tourController");
+//DELETE single location
+router.delete(
+  "/:tourId/location/:locationId",
+  tourController.deleteSingleLocation
+);
+
+//UPDATE single location
+router.patch(
+  "/:tourId/location/:locationId",
+  tourController.updateSingleLocation
+);
+
 //GET  all tours
 router.get("/", tourController.getAllTours);
 
@@ -11,4 +23,8 @@ router.get("/:tourId", tourController.getSingleTour);
 
 //DELETE single tour
 router.delete("/:tourId", tourController.deleteSingleTour);
+
+//PATCH update a tour
+router.patch("/:tourId", tourController.updateSingleTourById);
+
 module.exports = router;
