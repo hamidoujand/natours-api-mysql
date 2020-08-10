@@ -1,8 +1,15 @@
+let { Op } = require("sequelize");
 let sequelize = require("../db/connection");
 //GET all tours
 let getAllTours = async (req, res, next) => {
   try {
-    let allTours = await sequelize.models.tour.findAll({});
+    let allTours = await sequelize.models.tour.findAll({
+      where: {
+        secretTour: {
+          [Op.ne]: true,
+        },
+      },
+    });
     res.send(allTours);
   } catch (error) {
     next(error);
@@ -33,6 +40,13 @@ let getSingleTour = async (req, res, next) => {
         { model: sequelize.models.image },
       ],
     });
+
+    if (!tour) {
+      return res.status(404).send({
+        status: "failed",
+        msg: "not found",
+      });
+    }
     res.send({
       status: "success",
       data: tour,
@@ -107,7 +121,7 @@ let updateSingleLocation = async (req, res, next) => {
     next(error);
   }
 };
-
+//delete a location from tour
 let deleteSingleLocation = async (req, res, next) => {
   try {
     let product = await sequelize.models.location.findOne({
@@ -129,6 +143,33 @@ let deleteSingleLocation = async (req, res, next) => {
   }
 };
 
+//create another location
+let createNewLocation = async (req, res, next) => {
+  try {
+    let tour = await sequelize.models.tour.findOne({
+      where: { id: req.params.tourId },
+      include: [sequelize.models.location],
+    });
+    if (!tour) {
+      return res.status(404).send({
+        status: "failed",
+        msg: "not found",
+      });
+    }
+
+    await tour.createLocation({
+      coordinate: {
+        type: "Point",
+        coordinates: [req.body.lat * 1, req.body.lng * 1],
+      },
+    });
+    await tour.reload();
+    res.send(tour);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllTours,
   createTour,
@@ -137,4 +178,5 @@ module.exports = {
   updateSingleTourById,
   updateSingleLocation,
   deleteSingleLocation,
+  createNewLocation,
 };

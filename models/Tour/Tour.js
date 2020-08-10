@@ -49,6 +49,15 @@ Tour.init(
       validate: {
         notNull: { args: false, msg: "duration is required" },
       },
+      get() {
+        let duration = this.getDataValue("duration") * 1;
+        let weeks = duration / 7;
+        if (weeks < 1) {
+          return "less than 1 week";
+        } else {
+          return `${weeks.toFixed(0)} week/s`;
+        }
+      },
     },
     priceDiscount: {
       type: DataTypes.FLOAT,

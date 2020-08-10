@@ -1,5 +1,9 @@
 let router = require("express").Router();
 let tourController = require("../controllers/tourController");
+
+//POST add location to a Tour
+router.post("/:tourId/location", tourController.createNewLocation);
+
 //DELETE single location
 router.delete(
   "/:tourId/location/:locationId",
