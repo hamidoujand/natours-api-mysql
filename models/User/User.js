@@ -1,12 +1,36 @@
-let { Model, DataTypes } = require("sequelize");
-let sequelize = require("../../db/connection");
 let bcrypt = require("bcryptjs");
+let { Model, DataTypes } = require("sequelize");
+let crypto = require("crypto");
+let sequelize = require("../../db/connection");
 
 class User extends Model {
   //instance method for
   async isPasswordsMatch(rawPassword) {
     let hashPass = this.getDataValue("password");
     return await bcrypt.compare(rawPassword, hashPass);
+  }
+  isPasswordRecentlyChanged(tokenInitDate) {
+    let passwordChangedAt = this.getDataValue("passwordChangedAt");
+    if (passwordChangedAt) {
+      let dateToken = new Date(passwordChangedAt);
+
+      return dateToken.getTime() / 1000 > tokenInitDate;
+    } else {
+      return false;
+    }
+  }
+  async generateResetPasswordToken() {
+    //we need to hash some thing and that thing is some random bytes
+    let token = crypto.randomBytes(32).toString("hex");
+    let hash = crypto.createHash("sha256").update(token).digest("hex");
+    //here we need to save the token in db
+    this.setDataValue("passwordResetToken", hash);
+    this.setDataValue(
+      "passwordResetExpire",
+      new Date(Date.now() + 10 * 60 * 1000)
+    );
+    await this.save({ validate: false });
+    return token;
   }
 }
 

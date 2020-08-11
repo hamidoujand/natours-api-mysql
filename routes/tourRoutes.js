@@ -1,5 +1,6 @@
 let router = require("express").Router();
 let tourController = require("../controllers/tourController");
+let authController = require("../controllers/authController");
 
 //POST add location to a Tour
 router.post("/:tourId/location", tourController.createNewLocation);
@@ -17,7 +18,12 @@ router.patch(
 );
 
 //GET  all tours
-router.get("/", tourController.getAllTours);
+router.get(
+  "/",
+  authController.protectedRoute,
+  authController.restrictTo("user"),
+  tourController.getAllTours
+);
 
 //POST create tour
 router.post("/", tourController.createTour);
