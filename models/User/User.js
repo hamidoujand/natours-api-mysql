@@ -70,6 +70,11 @@ User.init(
       type: DataTypes.STRING,
       validate: {
         notEmpty: { msg: "passwordConfirm can not be empty string" },
+        isMatchWith(value) {
+          if (value !== this.password) {
+            throw new Error("Password and passwordConfirm not match");
+          }
+        },
       },
     },
     photo: {
@@ -98,19 +103,15 @@ User.init(
   {
     sequelize,
     modelName: "user",
-    validate: {
-      isPasswordsMatch() {
-        if (this.password !== this.passwordConfirm) {
-          throw new Error("password and passwordConfirm are not match");
-        }
-      },
-    },
     hooks: {
       //here we go for hash passwords
       async beforeSave(user) {
         let hash = await bcrypt.hash(user.password, 12);
         user.password = hash;
         user.passwordConfirm = null;
+      },
+      afterValidate(user) {
+        console.log("this is from the ", user);
       },
     },
   }

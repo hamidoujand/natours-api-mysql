@@ -1,6 +1,10 @@
 let jwt = require("jsonwebtoken");
+let crypto = require("crypto");
+let { Op } = require("sequelize");
+
 let sequelize = require("../db/connection");
 let genToken = require("../utils/generateToken");
+let Email = require("../utils/Email");
 
 let signupUser = async (req, res, next) => {
   try {
@@ -102,7 +106,7 @@ let restrictTo = (...roles) => {
     }
   };
 };
-
+//forgot password route
 let forgotPassword = async (req, res, next) => {
   try {
     let user = await sequelize.models.user.findOne({
@@ -121,16 +125,68 @@ let forgotPassword = async (req, res, next) => {
     let url = `${req.protocol}://${req.get(
       "host"
     )}/api/v1/users/reset-password/${token}`;
-    res.send(url);
+    let message = `Make a path request with the password and password confirm to
+    this URL = ${url}
+    `;
+    let email = new Email(user.email, "forgot password", message);
+    try {
+      email.sendEmail();
+      await res.send({
+        status: "success",
+        msg: "an email send to your email ",
+      });
+    } catch (error) {
+      await user.update({
+        passwordResetToken: null,
+        passwordResetExpire: null,
+      });
+      return res.status(500).send({
+        status: "failed",
+        msg: "some thing went wrong",
+      });
+    }
   } catch (error) {
     next(error);
   }
 };
 
+let resetPassword = async (req, res, next) => {
+  try {
+    //here we need to hash the token and find user by that and check the token is valid because of 10 min expire
+    let hash = crypto
+      .createHash("sha256")
+      .update(req.params.resetToken)
+      .digest("hex");
+    let user = await sequelize.models.user.findOne({
+      where: {
+        passwordResetToken: hash,
+        passwordResetExpire: {
+          [Op.gte]: new Date(),
+        },
+      },
+    });
+    if (!user) {
+      return res.status(400).send({
+        status: "failed",
+        msg: "invalid token",
+      });
+    }
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    user.passwordResetExpire = null;
+    user.passwordResetToken = null;
+    user.passwordChangedAt = new Date();
+    await user.save();
+    res.send(user);
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   signupUser,
   login,
   protectedRoute,
   restrictTo,
   forgotPassword,
+  resetPassword,
 };
