@@ -31,18 +31,18 @@ let login = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(400).send({
-        status: "failed",
-        msg: "invalid email or password",
-      });
+      let err = new Error("invalid email or password");
+      err.statusCode = 400;
+      err.status = "failed";
+      return next(err);
     }
     //let compare password with instance method
     let isMatch = await user.isPasswordsMatch(req.body.password);
     if (!isMatch) {
-      return res.status(400).send({
-        status: "failed",
-        msg: "invalid email or password",
-      });
+      let err = new Error("invalid email or password");
+      err.statusCode = 400;
+      err.status = "failed";
+      return next(err);
     }
     //here we generate a jwt token
     let token = genToken(user.id);
@@ -70,26 +70,34 @@ let protectedRoute = async (req, res, next) => {
         let data = jwt.verify(token, process.env.JWT_SECRET);
         let user = await sequelize.models.user.findByPk(data.userId);
         if (!user) {
-          return next(
-            new Error(
-              "There is no user related to this token please login again"
-            )
+          let err = new Error(
+            "There is no user related to this token please login again"
           );
+          err.statusCode = 400;
+          err.status = "failed";
+          return next(err);
         }
         //lets check if user recently changed the password after this token has been initialized
         if (user.isPasswordRecentlyChanged(data.iat)) {
-          return next(
-            new Error("password is recently changed please login again")
+          let err = new Error(
+            "password is recently changed please login again"
           );
+          err.statusCode = 422;
+          err.status = "failed";
+          return next(err);
         }
         req.user = user;
         next();
       } catch (error) {
         let err = new Error("This token is invalid");
+        err.statusCode = 400;
+        err.status = "failed";
         return next(err);
       }
     } else {
       let error = new Error("You are not logged in please login to get access");
+      error.statusCode = 400;
+      error.status = "failed";
       return next(error);
     }
   } catch (error) {
@@ -102,7 +110,10 @@ let restrictTo = (...roles) => {
     if (roles.includes(req.user.role)) {
       next();
     } else {
-      next(new Error("you do not have permission on this route"));
+      let error = new Error("you do not have permission on this route");
+      error.statusCode = 400;
+      error.status = "failed";
+      next(error);
     }
   };
 };
@@ -115,10 +126,10 @@ let forgotPassword = async (req, res, next) => {
       },
     });
     if (!user) {
-      return res.status(400).send({
-        status: "failed",
-        msg: "there is no user related to this email",
-      });
+      let error = new Error("there is no user related to this email");
+      error.statusCode = 400;
+      error.status = "failed";
+      return next(error);
     }
     //here we create the token for reset password
     let token = await user.generateResetPasswordToken();
@@ -140,16 +151,16 @@ let forgotPassword = async (req, res, next) => {
         passwordResetToken: null,
         passwordResetExpire: null,
       });
-      return res.status(500).send({
-        status: "failed",
-        msg: "some thing went wrong",
-      });
+      let err = new Error("something went wrong");
+      err.statusCode = 500;
+      err.status = "failed";
+      return next(err);
     }
   } catch (error) {
     next(error);
   }
 };
-
+//reset password
 let resetPassword = async (req, res, next) => {
   try {
     //here we need to hash the token and find user by that and check the token is valid because of 10 min expire
@@ -166,10 +177,10 @@ let resetPassword = async (req, res, next) => {
       },
     });
     if (!user) {
-      return res.status(400).send({
-        status: "failed",
-        msg: "invalid token",
-      });
+      let error = new Error("invalid token");
+      error.statusCode = 422;
+      error.status = "failed";
+      return next(error);
     }
     user.password = req.body.password;
     user.passwordConfirm = req.body.passwordConfirm;
@@ -177,7 +188,42 @@ let resetPassword = async (req, res, next) => {
     user.passwordResetToken = null;
     user.passwordChangedAt = new Date();
     await user.save();
-    res.send(user);
+    //here we need to log the user in
+    let token = genToken(user.id);
+    res.status(200).send({
+      status: "success",
+      token,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//logged in user want to change the password
+let updatePassword = async (req, res, next) => {
+  try {
+    let oldPassword = req.body.oldPassword;
+    let newPassword = req.body.newPassword;
+    let newPasswordConfirm = req.body.newPasswordConfirm;
+
+    //1- first we need to check to see if oldPassword matches the logged in user password
+    let isPasswordsMatch = await req.user.isPasswordsMatch(oldPassword);
+    if (!isPasswordsMatch) {
+      let error = new Error("password is wrong");
+      error.statusCode = 400;
+      error.status = "failed";
+      return next(error);
+    }
+    await req.user.update({
+      password: newPassword,
+      passwordConfirm: newPasswordConfirm,
+    });
+    //here we need to log user again
+    let token = genToken(user);
+    res.send({
+      status: "success",
+      token,
+    });
   } catch (error) {
     next(error);
   }
@@ -189,4 +235,5 @@ module.exports = {
   restrictTo,
   forgotPassword,
   resetPassword,
+  updatePassword,
 };

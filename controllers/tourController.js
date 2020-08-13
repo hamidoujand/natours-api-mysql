@@ -42,10 +42,10 @@ let getSingleTour = async (req, res, next) => {
     });
 
     if (!tour) {
-      return res.status(404).send({
-        status: "failed",
-        msg: "not found",
-      });
+      let err = new Error("tour not found");
+      err.statusCode = 404;
+      err.status = "failed";
+      return next(err);
     }
     res.send({
       status: "success",
@@ -70,10 +70,10 @@ let deleteSingleTour = async (req, res, next) => {
         deleted,
       });
     } else {
-      res.status(404).send({
-        status: "failed",
-        msg: "not found",
-      });
+      let error = new Error("not found");
+      error.statusCode = 404;
+      error.status = "failed";
+      return next(error);
     }
   } catch (error) {
     next(error);
@@ -86,9 +86,12 @@ let updateSingleTourById = async (req, res, next) => {
     //because we need to return the record back so we do the find and then update
     let tour = await sequelize.models.tour.findByPk(req.params.tourId);
     if (!tour) {
-      return res.status(404).send({ status: "failed", msg: "not found" });
+      let error = new Error("not found");
+      error.statusCode = 404;
+      error.status = "failed";
+      return next(error);
     }
-    tour.update(req.body);
+    await tour.update(req.body);
     res.send({ status: "success", data: tour });
   } catch (error) {
     next(error);
@@ -104,10 +107,10 @@ let updateSingleLocation = async (req, res, next) => {
       where: { id: locationId, tourId: tourId },
     });
     if (!location) {
-      return res.status(404).send({
-        status: "failed",
-        msg: "not found",
-      });
+      let error = new Error("not found");
+      error.statusCode = 404;
+      error.status = "failed";
+      return next(error);
     }
     //here we do the update
     await location.update({
@@ -128,10 +131,10 @@ let deleteSingleLocation = async (req, res, next) => {
       where: { id: req.params.locationId, tourId: req.params.tourId },
     });
     if (!product) {
-      return res.status(404).send({
-        status: "failed",
-        msg: "not found",
-      });
+      let error = new Error("not found");
+      error.statusCode = 404;
+      error.status = "failed";
+      return next(error);
     }
     await product.destroy();
     res.send({
@@ -151,10 +154,10 @@ let createNewLocation = async (req, res, next) => {
       include: [sequelize.models.location],
     });
     if (!tour) {
-      return res.status(404).send({
-        status: "failed",
-        msg: "not found",
-      });
+      let error = new Error("not found");
+      error.statusCode = 404;
+      error.status = "failed";
+      return next(error);
     }
 
     await tour.createLocation({

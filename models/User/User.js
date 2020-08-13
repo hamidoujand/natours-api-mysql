@@ -110,9 +110,6 @@ User.init(
         user.password = hash;
         user.passwordConfirm = null;
       },
-      afterValidate(user) {
-        console.log("this is from the ", user);
-      },
     },
   }
 );

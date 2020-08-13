@@ -8,6 +8,7 @@ let sequelize = require("./db/connection");
 //routes
 let tourRouter = require("./routes/tourRoutes");
 let userRouter = require("./routes/userRoutes");
+let errorHandler = require("./controllers/errorController");
 //models
 let Tour = require("./models/Tour/Tour");
 let TourStartDates = require("./models/Tour/TourStartDate");
@@ -23,9 +24,7 @@ app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
 
 //error handler
-app.use((err, req, res, next) => {
-  res.send(err.message);
-});
+app.use(errorHandler);
 
 //associations
 Tour.StartDates = Tour.hasMany(TourStartDates, { onDelete: "CASCADE" });
