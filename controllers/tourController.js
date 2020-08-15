@@ -1,5 +1,6 @@
-let { Op } = require("sequelize");
+let { Op, Sequelize } = require("sequelize");
 let sequelize = require("../db/connection");
+const router = require("../routes/tourRoutes");
 //GET all tours
 let getAllTours = async (req, res, next) => {
   try {
@@ -173,6 +174,39 @@ let createNewLocation = async (req, res, next) => {
   }
 };
 
+let getToursNear = async (req, res, next) => {
+  try {
+    let [lat, lng] = req.params.latLng.split(",");
+    let distance = req.params.distance;
+    //first we create the location POINT that user is
+    let location = Sequelize.literal(`ST_GeomFromText('POINT(${lng} ${lat})')`);
+    let allTours = await sequelize.models.tour.findAll({
+      attributes: [
+        [
+          sequelize.fn(
+            "ST_Distance_Sphere",
+            sequelize.literal("startLocation"),
+            location
+          ),
+          "distance",
+        ],
+        "name",
+      ],
+      where: Sequelize.where(
+        Sequelize.fn(
+          "ST_Distance_Sphere",
+          Sequelize.literal("startLocation"),
+          location
+        ),
+        { [Op.lte]: distance }
+      ),
+    });
+    res.send(allTours);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllTours,
   createTour,
@@ -182,4 +216,5 @@ module.exports = {
   updateSingleLocation,
   deleteSingleLocation,
   createNewLocation,
+  getToursNear,
 };

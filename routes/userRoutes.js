@@ -10,7 +10,7 @@ router.post("/login", authController.login);
 //POST get
 router.post("/forgot-password", authController.forgotPassword);
 
-//PATCH update user
+//PATCH update user password
 router.patch(
   "/update-password",
   authController.protectedRoute,

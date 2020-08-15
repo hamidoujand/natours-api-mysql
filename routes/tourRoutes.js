@@ -2,6 +2,12 @@ let router = require("express").Router();
 let tourController = require("../controllers/tourController");
 let authController = require("../controllers/authController");
 
+//GET tours near the point
+router.get(
+  "/tours-within/:distance/center/:latLng",
+  tourController.getToursNear
+);
+
 //POST add location to a Tour
 router.post("/:tourId/location", tourController.createNewLocation);
 
